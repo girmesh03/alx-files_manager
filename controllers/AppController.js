@@ -1,28 +1,20 @@
-import dbClient from '../utils/db';
+/* eslint-disable import/no-named-as-default */
 import redisClient from '../utils/redis';
+import dbClient from '../utils/db';
 
-class AppController {
-  //   constructor() {}
-
-  getStatus(req, res) {
-    if (dbClient.isAlive() && redisClient.isAlive()) {
-      return res.status(200).send({ redis: true, db: true });
-    }
-    if (dbClient.isAlive() && !redisClient.isAlive()) {
-      return res.status(500).send({ redis: false, db: true });
-    }
-    if (!dbClient.isAlive() && redisClient.isAlive()) {
-      return res.status(500).send({ redis: true, db: false });
-    }
-
-    return res.status(500).send({ redis: false, db: false });
+export default class AppController {
+  static getStatus(req, res) {
+    res.status(200).json({
+      redis: redisClient.isAlive(),
+      db: dbClient.isAlive(),
+    });
   }
 
-  async getStats(req, res) {
-    const nbUsers = await dbClient.nbUsers();
-    const nbFiles = await dbClient.nbFiles();
-    return res.status(200).send({ users: nbUsers, files: nbFiles });
+  static getStats(req, res) {
+    Promise.all([dbClient.nbUsers(), dbClient.nbFiles()]).then(
+      ([usersCount, filesCount]) => {
+        res.status(200).json({ users: usersCount, files: filesCount });
+      }
+    );
   }
 }
-const appController = new AppController();
-export default appController;
